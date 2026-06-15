@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Dashboard</h1>
+
+<div class="stats">
+
+    <div class="card">
+        <h3>Total</h3>
+        <p>{{ total_investigations }}</p>
+    </div>
+
+    <div class="card">
+        <h3>Safe</h3>
+        <p>{{ safe_count }}</p>
+    </div>
+
+    <div class="card">
+        <h3>Suspicious</h3>
+        <p>{{ suspicious_count }}</p>
+    </div>
+
+    <div class="card">
+        <h3>High Risk</h3>
+        <p>{{ high_risk_count }}</p>
+    </div>
+
+    <div class="card">
+        <h3>Critical</h3>
+        <p>{{ critical_count }}</p>
+    </div>
+
+</div>
+
+<h2>Recent Investigations</h2>
+
+<table>
+
+    <thead>
+
+        <tr>
+
+            <th>Target</th>
+            <th>Type</th>
+            <th>Risk Score</th>
+            <th>Verdict</th>
+            <th>Actions</th>
+
+        </tr>
+
+    </thead>
+
+    <tbody>
+
+        {% for investigation in investigations %}
+
+        <tr>
+
+            <td>{{ investigation.target }}</td>
+
+            <td>{{ investigation.query_type }}</td>
+
+            <td>{{ investigation.risk_score }}</td>
+
+            <td>
+
+                <span class="
+                    {% if investigation.verdict == 'Safe' %}
+                        safe
+                    {% elif investigation.verdict == 'Suspicious' %}
+                        suspicious
+                    {% elif investigation.verdict == 'High Risk' %}
+                        high-risk
+                    {% else %}
+                        critical
+                    {% endif %}
+                ">
+
+                    {{ investigation.verdict }}
+
+                </span>
+
+            </td>
+
+            <td>
+
+                <a
+                    href="/report/{{ investigation.id }}"
+                    class="view-btn"
+                >
+                    View Report
+                </a>
+
+            </td>
+
+        </tr>
+
+        {% endfor %}
+
+    </tbody>
+
+</table>
+
+{% endblock %}

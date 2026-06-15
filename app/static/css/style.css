@@ -1,0 +1,266 @@
+/* =========================
+   GLOBAL
+========================= */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Segoe UI, sans-serif;
+    background:#0f172a;
+    color:white;
+}
+
+.container{
+    width:90%;
+    margin:30px auto;
+}
+
+/* =========================
+   NAVBAR
+========================= */
+
+nav{
+    background:#111827;
+    padding:20px 40px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border-bottom:1px solid #334155;
+}
+
+nav h2{
+    color:#38bdf8;
+}
+
+nav ul{
+    list-style:none;
+    display:flex;
+    gap:25px;
+}
+
+nav a{
+    color:white;
+    text-decoration:none;
+    font-weight:500;
+    transition:.3s;
+}
+
+nav a:hover{
+    color:#38bdf8;
+}
+
+/* =========================
+   HEADINGS
+========================= */
+
+h1{
+    margin-bottom:20px;
+}
+
+h2{
+    margin-bottom:20px;
+}
+
+/* =========================
+   DASHBOARD CARDS
+========================= */
+
+.stats{
+    display:flex;
+    gap:20px;
+    flex-wrap:wrap;
+    margin-bottom:40px;
+}
+
+.card{
+    background:#1e293b;
+    border-radius:15px;
+    padding:25px;
+    min-width:220px;
+    box-shadow:0 4px 12px rgba(0,0,0,.3);
+}
+
+.card h3{
+    color:#94a3b8;
+    margin-bottom:10px;
+}
+
+.card p{
+    font-size:35px;
+    font-weight:bold;
+    color:#38bdf8;
+}
+
+/* =========================
+   TABLES
+========================= */
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:#1e293b;
+    border-radius:12px;
+    overflow:hidden;
+}
+
+th{
+    background:#334155;
+    padding:15px;
+    text-align:left;
+}
+
+td{
+    padding:15px;
+    border-bottom:1px solid #475569;
+}
+
+tr:hover{
+    background:#2d3c52;
+}
+
+/* =========================
+   VERDICT BADGES
+========================= */
+
+.safe{
+    color:#22c55e;
+    font-weight:bold;
+}
+
+.suspicious{
+    color:#eab308;
+    font-weight:bold;
+}
+
+.high-risk{
+    color:#f97316;
+    font-weight:bold;
+}
+
+.critical{
+    color:#ef4444;
+    font-weight:bold;
+}
+
+/* =========================
+   INVESTIGATION PAGE
+========================= */
+
+.investigation-container{
+    max-width:900px;
+    margin:60px auto;
+}
+
+.investigation-container h1{
+    font-size:48px;
+    margin-bottom:15px;
+}
+
+.investigation-container p{
+    color:#94a3b8;
+    margin-bottom:30px;
+}
+
+.investigation-form{
+    display:flex;
+    gap:15px;
+}
+
+.investigation-form input{
+    flex:1;
+    padding:15px;
+    border:none;
+    border-radius:10px;
+    background:#1e293b;
+    color:white;
+    font-size:16px;
+}
+
+.investigation-form input:focus{
+    outline:none;
+    border:2px solid #38bdf8;
+}
+
+.investigation-form button{
+    padding:15px 25px;
+    border:none;
+    border-radius:10px;
+    background:#38bdf8;
+    color:#0f172a;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.investigation-form button:hover{
+    opacity:.9;
+}
+
+/* =========================
+   REPORT PAGE
+========================= */
+
+.report-container{
+    max-width:1000px;
+    margin:40px auto;
+}
+
+.report-section{
+    background:#1e293b;
+    padding:25px;
+    border-radius:15px;
+    margin-bottom:25px;
+    box-shadow:0 4px 12px rgba(0,0,0,.3);
+}
+
+.report-section h2{
+    color:#38bdf8;
+    margin-bottom:15px;
+}
+
+.report-section p{
+    margin-bottom:12px;
+}
+
+.report-section ul{
+    margin-top:15px;
+    padding-left:20px;
+}
+
+.report-section li{
+    margin-bottom:10px;
+    color:#cbd5e1;
+}
+
+.view-btn{
+    display:inline-block;
+    padding:8px 15px;
+    background:#38bdf8;
+    color:#0f172a;
+    text-decoration:none;
+    border-radius:8px;
+    font-weight:bold;
+    transition:.3s;
+}
+
+.view-btn:hover{
+    opacity:.9;
+}
+
+.back-btn{
+    display:inline-block;
+    padding:10px 18px;
+    background:#334155;
+    color:white;
+    text-decoration:none;
+    border-radius:8px;
+    font-weight:600;
+    transition:.3s;
+}
+
+.back-btn:hover{
+    background:#475569;
+}

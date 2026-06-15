@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<div class="report-container">
+
+    <h1>🔱 Investigation Report</h1>
+
+    <div class="report-section">
+
+        <h2>Overview</h2>
+
+        <p><strong>Target:</strong> {{ query }}</p>
+
+        <p><strong>Type:</strong> {{ query_type }}</p>
+
+        <p><strong>Status:</strong> {{ analysis.message }}</p>
+
+    </div>
+
+    <div class="report-section">
+
+        <h2>Risk Assessment</h2>
+
+        <p><strong>Risk Score:</strong> {{ risk_result.score }}</p>
+
+        <p><strong>Verdict:</strong> {{ risk_result.verdict }}</p>
+
+    </div>
+
+    <div class="report-section">
+
+        <h2>Evidence</h2>
+
+        <ul>
+
+            {% for item in risk_result.evidence %}
+                <li>{{ item }}</li>
+            {% endfor %}
+
+        </ul>
+
+    </div>
+
+    <div class="report-section">
+
+        <h2>Recommendation</h2>
+
+        {% if risk_result.verdict == "Safe" %}
+
+            <p>No immediate threat indicators detected.</p>
+
+        {% elif risk_result.verdict == "Suspicious" %}
+
+            <p>Proceed with caution and verify legitimacy.</p>
+
+        {% elif risk_result.verdict == "High Risk" %}
+
+            <p>Investigation recommended before interaction.</p>
+
+        {% else %}
+
+            <p>Potential phishing or malicious indicator. Avoid interaction and investigate immediately.</p>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+{% endblock %}

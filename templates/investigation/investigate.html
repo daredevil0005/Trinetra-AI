@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="investigation-container">
+
+    <h1>Investigate Target</h1>
+
+    <p>
+        Analyze domains, IP addresses, and URLs.
+    </p>
+
+    <form method="POST" class="investigation-form">
+
+        <input
+            type="text"
+            name="query"
+            placeholder="Enter domain, IP, or URL"
+            required
+        >
+
+        <button type="submit">
+            Analyze
+        </button>
+
+    </form>
+
+</div>
+
+{% endblock %}

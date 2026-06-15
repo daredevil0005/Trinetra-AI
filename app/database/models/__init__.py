@@ -1,0 +1,1 @@
+from app.database.models.investigation import Investigation

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="report-container">
+
+    <div style="margin-bottom:20px;">
+
+        <a href="/" class="back-btn">
+            ← Back to Dashboard
+        </a>
+
+    </div>
+
+    <h1>🔱 Saved Investigation Report</h1>
+
+    <div class="report-section">
+
+        <h2>Overview</h2>
+
+        <p>
+            <strong>Target:</strong>
+            {{ investigation.target }}
+        </p>
+
+        <p>
+            <strong>Type:</strong>
+            {{ investigation.query_type }}
+        </p>
+
+        <p>
+            <strong>Date:</strong>
+            {{ investigation.created_at }}
+        </p>
+
+    </div>
+
+    <div class="report-section">
+
+        <h2>Risk Assessment</h2>
+
+        <p>
+            <strong>Risk Score:</strong>
+            {{ investigation.risk_score }}
+        </p>
+
+        <p>
+            <strong>Verdict:</strong>
+            {{ investigation.verdict }}
+        </p>
+
+    </div>
+
+    <div class="report-section">
+
+        <h2>Analyst Recommendation</h2>
+
+        {% if investigation.verdict == "Safe" %}
+
+            <p>
+                No immediate threat indicators detected.
+            </p>
+
+        {% elif investigation.verdict == "Suspicious" %}
+
+            <p>
+                Proceed with caution and verify legitimacy.
+            </p>
+
+        {% elif investigation.verdict == "High Risk" %}
+
+            <p>
+                Investigation recommended before interaction.
+            </p>
+
+        {% else %}
+
+            <p>
+                Potential phishing or malicious indicator.
+                Avoid interaction and investigate immediately.
+            </p>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+{% endblock %}
