@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="report-container">
+
+    <a href="/ioc"
+       class="back-btn">
+
+        ← New Extraction
+
+    </a>
+
+    <br><br>
+
+    <h1>🔱 IOC Extraction Report</h1>
+
+    <div class="report-section">
+
+        <h2>IP Addresses</h2>
+
+        <ul>
+
+            {% for ip in results.ips %}
+
+                <li>{{ ip }}</li>
+
+            {% endfor %}
+
+        </ul>
+
+    </div>
+
+    <div class="report-section">
+
+        <h2>Domains</h2>
+
+        <ul>
+
+            {% for domain in results.domains %}
+
+                <li>{{ domain }}</li>
+
+            {% endfor %}
+
+        </ul>
+
+    </div>
+
+    <div class="report-section">
+
+        <h2>URLs</h2>
+
+        <ul>
+
+            {% for url in results.urls %}
+
+                <li>{{ url }}</li>
+
+            {% endfor %}
+
+        </ul>
+
+    </div>
+
+    <div class="report-section">
+
+        <h2>Emails</h2>
+
+        <ul>
+
+            {% for email in results.emails %}
+
+                <li>{{ email }}</li>
+
+            {% endfor %}
+
+        </ul>
+
+    </div>
+
+</div>
+
+{% endblock %}

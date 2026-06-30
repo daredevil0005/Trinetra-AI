@@ -21,4 +21,4 @@ class Investigation(db.Model):
     )
 
     def __repr__(self):
-        return f"<Investigation {self.query}>"
+        return f"<Investigation {self.target}>"

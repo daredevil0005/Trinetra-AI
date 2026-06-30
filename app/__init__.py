@@ -2,8 +2,10 @@ from flask import Flask
 
 from app.config.config import Config
 from app.database.db import db
+
 from app.routes.dashboard_routes import dashboard_bp
 from app.routes.investigation_routes import investigation_bp
+from app.routes.ioc_routes import ioc_bp
 
 
 def create_app():
@@ -14,7 +16,9 @@ def create_app():
         static_folder="static"
     )
 
-    app.config.from_object(Config)
+    app.config.from_object(
+        Config
+    )
 
     db.init_app(app)
 
@@ -26,7 +30,11 @@ def create_app():
     )
 
     app.register_blueprint(
-         investigation_bp
+        investigation_bp
+    )
+
+    app.register_blueprint(
+        ioc_bp
     )
 
     return app

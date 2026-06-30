@@ -264,3 +264,44 @@ tr:hover{
 .back-btn:hover{
     background:#475569;
 }
+
+.ioc-form{
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+}
+
+.ioc-form textarea{
+    width:100%;
+    background:#1e293b;
+    color:white;
+    border:none;
+    border-radius:12px;
+    padding:15px;
+    resize:vertical;
+    font-size:15px;
+}
+
+.ioc-form textarea:focus{
+    outline:none;
+    border:2px solid #38bdf8;
+}
+
+.ioc-form button{
+    width:220px;
+    height:50px;
+    align-self:center;
+    background:#38bdf8;
+    color:#0f172a;
+    border:none;
+    border-radius:10px;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.ioc-form button:hover{
+    background:#0ea5e9;
+    transform:translateY(-2px);
+}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="investigation-container">
+
+    <h1>🔱 IOC Extractor</h1>
+
+    <p>
+        Paste threat intelligence text,
+        malware reports, emails,
+        logs or indicators.
+    </p>
+
+    <form
+        method="POST"
+        class="ioc-form"
+    >
+
+        <textarea
+            name="threat_text"
+            rows="12"
+            placeholder="Paste threat intelligence text here..."
+            required
+        ></textarea>
+
+        <button type="submit">
+
+            Extract IOCs
+
+        </button>
+
+    </form>
+
+</div>
+
+{% endblock %}
