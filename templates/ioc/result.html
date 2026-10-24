@@ -1,84 +1,17 @@
 {% extends "base.html" %}
 
+{% block title %}Extraction results · Trinetra AI{% endblock %}
+
 {% block content %}
-
-<div class="report-container">
-
-    <a href="/ioc"
-       class="back-btn">
-
-        ← New Extraction
-
-    </a>
-
-    <br><br>
-
-    <h1>🔱 IOC Extraction Report</h1>
-
-    <div class="report-section">
-
-        <h2>IP Addresses</h2>
-
-        <ul>
-
-            {% for ip in results.ips %}
-
-                <li>{{ ip }}</li>
-
-            {% endfor %}
-
-        </ul>
-
-    </div>
-
-    <div class="report-section">
-
-        <h2>Domains</h2>
-
-        <ul>
-
-            {% for domain in results.domains %}
-
-                <li>{{ domain }}</li>
-
-            {% endfor %}
-
-        </ul>
-
-    </div>
-
-    <div class="report-section">
-
-        <h2>URLs</h2>
-
-        <ul>
-
-            {% for url in results.urls %}
-
-                <li>{{ url }}</li>
-
-            {% endfor %}
-
-        </ul>
-
-    </div>
-
-    <div class="report-section">
-
-        <h2>Emails</h2>
-
-        <ul>
-
-            {% for email in results.emails %}
-
-                <li>{{ email }}</li>
-
-            {% endfor %}
-
-        </ul>
-
-    </div>
-
-</div>
-
+<section class="page-heading split-heading"><div><p class="eyebrow">LOCAL EXTRACTION</p><h1>Extraction results</h1><p class="muted">{{ total }} validated indicator{{ '' if total == 1 else 's' }} found. Text was analyzed in memory and was not stored.</p></div><a class="button secondary" href="{{ url_for('ioc.ioc_extractor') }}">New extraction</a></section>
+{% if total %}<div class="toolbar"><span class="field-help">Copy individual indicators or a whole category.</span><button class="button secondary" type="button" data-copy="{{ (results.ips + results.domains + results.urls + results.emails + results.md5 + results.sha1 + results.sha256)|join('; ') }}">Copy all</button></div>{% endif %}
+<section class="ioc-grid">
+    {% for key, title in [('ips', 'IPv4 addresses'), ('domains', 'Domains'), ('urls', 'URLs'), ('emails', 'Email addresses'), ('md5', 'MD5 hashes'), ('sha1', 'SHA-1 hashes'), ('sha256', 'SHA-256 hashes')] %}
+    <article class="panel ioc-card"><div class="section-heading"><h2>{{ title }}</h2><span class="count-pill">{{ results[key]|length }}</span></div>
+        {% if results[key] %}<div class="ioc-list">{% for value in results[key] %}<div class="ioc-item"><code>{{ value }}</code><button type="button" class="copy-button" data-copy="{{ value }}" aria-label="Copy {{ value }}">Copy</button></div>{% endfor %}</div><button class="text-button" type="button" data-copy="{{ results[key]|join('; ') }}">Copy {{ title|lower }}</button>
+        {% else %}<p class="empty-inline">No {{ title|lower }} found.</p>{% endif %}
+    </article>
+    {% endfor %}
+</section>
+<p class="copy-status" role="status" aria-live="polite"></p>
 {% endblock %}

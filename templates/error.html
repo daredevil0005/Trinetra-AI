@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title or 'Request error' }} · Trinetra AI{% endblock %}
+
+{% block content %}
+<section class="empty-state error-state"><span class="empty-icon">!</span><p class="eyebrow">REQUEST NOT COMPLETED</p><h1>{{ title or 'Request error' }}</h1><p>{{ message }}</p><a class="button primary" href="{{ url_for('dashboard.dashboard') }}">Return to dashboard</a></section>
+{% endblock %}

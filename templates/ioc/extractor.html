@@ -1,37 +1,18 @@
 {% extends "base.html" %}
 
+{% block title %}IOC Extractor · Trinetra AI{% endblock %}
+
 {% block content %}
-
-<div class="investigation-container">
-
-    <h1>🔱 IOC Extractor</h1>
-
-    <p>
-        Paste threat intelligence text,
-        malware reports, emails,
-        logs or indicators.
-    </p>
-
-    <form
-        method="POST"
-        class="ioc-form"
-    >
-
-        <textarea
-            name="threat_text"
-            rows="12"
-            placeholder="Paste threat intelligence text here..."
-            required
-        ></textarea>
-
-        <button type="submit">
-
-            Extract IOCs
-
-        </button>
-
+<section class="form-card wide-form-card">
+    <p class="eyebrow">TEXT ANALYSIS</p><h1>IOC extractor</h1>
+    <p class="muted intro-copy">Extract candidate IPv4 addresses, domains, URLs, email addresses, and MD5, SHA-1, or SHA-256 hashes from reports, logs, emails, or notes.</p>
+    <p class="scope-note"><strong>Extraction is not verification.</strong> Results are syntax-checked and normalized locally. No reputation lookups or network requests are made.</p>
+    {% if error %}<div class="alert error-alert" role="alert">{{ error }}</div>{% endif %}
+    <form method="post" class="stack-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="threat-text">Paste text</label>
+        <textarea id="threat-text" name="threat_text" rows="12" maxlength="100000" placeholder="Paste threat intelligence text here…" required></textarea>
+        <div class="form-actions"><button class="button primary" type="submit">Extract indicators</button><span class="field-help">Maximum 100,000 characters. Pasted text is not stored.</span></div>
     </form>
-
-</div>
-
+</section>
 {% endblock %}

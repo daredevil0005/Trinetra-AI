@@ -1,28 +1,25 @@
-import re
 import ipaddress
 
 
 def detect_type(query):
+    """Classify an indicator candidate without claiming that it is valid."""
+    if not isinstance(query, str):
+        return "unknown"
 
-    query = query.strip()
+    value = query.strip()
+    if not value:
+        return "unknown"
 
-    # IP Address
     try:
-        ipaddress.ip_address(query)
+        ipaddress.ip_address(value)
         return "ip"
     except ValueError:
         pass
 
-    # URL
-    url_pattern = r"^https?://"
-
-    if re.match(url_pattern, query):
+    if "://" in value:
         return "url"
 
-    # Domain
-    domain_pattern = r"^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-
-    if re.match(domain_pattern, query):
+    if "." in value and not any(char.isspace() for char in value):
         return "domain"
 
     return "unknown"

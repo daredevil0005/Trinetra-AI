@@ -1,75 +1,44 @@
-def calculate_risk(query, query_type):
+def verdict_for_score(score):
+    """Map explainable points to a review priority, never a safety claim."""
+    score = max(0, min(100, int(score)))
+    if score == 0:
+        return "Unassessed"
+    if score <= 24:
+        return "Low"
+    if score <= 49:
+        return "Suspicious"
+    if score <= 74:
+        return "High Risk"
+    return "Critical"
 
-    score = 0
 
+def calculate_risk(query, query_type, heuristics=None, enrichment=None):
+    """Score explicit review signals; domain words and TLDs carry no points."""
+    del query, query_type  # Kept in the public signature for existing callers.
     evidence = []
+    points = 0
 
-    if query_type == "domain":
+    for item in heuristics or []:
+        weight = max(0, min(100, int(item.get("weight", 0))))
+        points += weight
+        evidence.append({**item, "source": "local_heuristic", "risk_weight": weight})
 
-        domain = query.lower()
+    for provider in enrichment or []:
+        for item in provider.get("findings", []):
+            weight = max(0, min(100, int(item.get("risk_weight", 0))))
+            points += weight
+            evidence.append({**item, "source": provider.get("provider", "external_provider"), "risk_weight": weight})
 
-        suspicious_keywords = [
-            "login",
-            "secure",
-            "verify",
-            "update",
-            "bank",
-            "account",
-            "paypal",
-            "wallet",
-            "crypto"
-        ]
-
-        for keyword in suspicious_keywords:
-
-            if keyword in domain:
-
-                score += 15
-
-                evidence.append(
-                    f"Contains suspicious keyword: {keyword}"
-                )
-
-        suspicious_tlds = [
-            ".xyz",
-            ".top",
-            ".tk",
-            ".ml",
-            ".click"
-        ]
-
-        for tld in suspicious_tlds:
-
-            if domain.endswith(tld):
-
-                score += 25
-
-                evidence.append(
-                    f"Suspicious TLD detected: {tld}"
-                )
-
-        if len(domain) > 25:
-
-            score += 15
-
-            evidence.append(
-                "Unusually long domain name"
-            )
-
-    if score <= 20:
-        verdict = "Safe"
-
-    elif score <= 50:
-        verdict = "Suspicious"
-
-    elif score <= 80:
-        verdict = "High Risk"
-
+    score = max(0, min(100, points))
+    verdict = verdict_for_score(score)
+    if score == 0:
+        explanation = "No scored review signals were observed. Reputation was not established; this is not a safe verdict."
     else:
-        verdict = "Critical"
+        explanation = "Review priority is based on the listed local heuristics and/or provider findings; it is not proof of malicious activity."
 
     return {
         "score": score,
         "verdict": verdict,
-        "evidence": evidence
+        "evidence": evidence,
+        "explanation": explanation,
     }

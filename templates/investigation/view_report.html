@@ -1,89 +1,25 @@
 {% extends "base.html" %}
 
+{% block title %}Saved report · Trinetra AI{% endblock %}
+
 {% block content %}
+<section class="page-heading split-heading"><div><p class="eyebrow">SAVED INVESTIGATION</p><h1>Report #{{ investigation.id }}</h1><p class="muted">{{ investigation.created_at.strftime('%Y-%m-%d %H:%M UTC') if investigation.created_at else 'Timestamp unavailable' }}</p></div><div class="report-actions compact-actions"><a class="button secondary" href="{{ url_for('history.history') }}">Back to history</a><a class="button primary" href="{{ url_for('investigation.download_report', investigation_id=investigation.id) }}">Download report</a></div></section>
 
-<div class="report-container">
+<section class="report-grid">
+    <article class="panel"><p class="eyebrow">OVERVIEW</p><h2 class="break-all">{{ investigation.target }}</h2><dl class="detail-list"><div><dt>Indicator type</dt><dd>{{ investigation.query_type|upper }}</dd></div><div><dt>Status</dt><dd>{{ investigation.analysis_status|title }}</dd></div><div><dt>Created</dt><dd>{{ investigation.created_at.strftime('%Y-%m-%d %H:%M UTC') if investigation.created_at else '—' }}</dd></div></dl></article>
+    <article class="panel risk-panel"><p class="eyebrow">REVIEW PRIORITY</p><div class="risk-score-row"><strong>{{ investigation.risk_score if investigation.risk_score is not none else '—' }}</strong><span class="badge verdict-{{ (investigation.verdict or 'unassessed')|lower|replace(' ', '-') }}">{{ investigation.verdict or 'Unassessed' }}</span></div><p>{{ investigation.summary or 'This record predates detailed evidence storage. Its original risk score and verdict are preserved.' }}</p>{% if investigation.analysis_status == 'legacy' %}<p class="field-help">Legacy report: detailed evidence was not stored by the earlier application version.</p>{% endif %}</article>
+</section>
 
-    <div style="margin-bottom:20px;">
+<article class="panel report-panel"><p class="eyebrow">EVIDENCE</p><h2>Analysis details</h2>
+    {% if investigation.evidence %}<ul class="evidence-list">{% for item in investigation.evidence %}<li><strong>{{ item.name or 'Finding' }}{% if item.risk_weight %} <span class="weight-tag">+{{ item.risk_weight }}</span>{% endif %}</strong><span class="evidence-category">{{ item.category or item.source or 'Evidence'|title }}</span><span>{{ item.detail or '' }}</span></li>{% endfor %}</ul>{% else %}<p class="empty-inline">No detailed evidence was recorded for this investigation.</p>{% endif %}
+</article>
 
-        <a href="/" class="back-btn">
-            ← Back to Dashboard
-        </a>
+<section class="report-grid">
+    <article class="panel report-panel"><p class="eyebrow">NEXT STEPS</p><h2>Recommendations</h2>{% if investigation.recommendations %}<ul class="recommendation-list">{% for item in investigation.recommendations %}<li>{{ item }}</li>{% endfor %}</ul>{% else %}<p class="empty-inline">No recommendations were stored for this record.</p>{% endif %}</article>
+    <article class="panel report-panel"><p class="eyebrow">SOURCES</p><h2>Data sources and limitations</h2>{% if investigation.data_sources %}<ul class="recommendation-list">{% for item in investigation.data_sources %}<li>{{ item }}</li>{% endfor %}</ul>{% else %}<p class="empty-inline">Detailed source scope was not stored by the earlier application version.</p>{% endif %}</article>
+</section>
 
-    </div>
-
-    <h1>🔱 Saved Investigation Report</h1>
-
-    <div class="report-section">
-
-        <h2>Overview</h2>
-
-        <p>
-            <strong>Target:</strong>
-            {{ investigation.target }}
-        </p>
-
-        <p>
-            <strong>Type:</strong>
-            {{ investigation.query_type }}
-        </p>
-
-        <p>
-            <strong>Date:</strong>
-            {{ investigation.created_at }}
-        </p>
-
-    </div>
-
-    <div class="report-section">
-
-        <h2>Risk Assessment</h2>
-
-        <p>
-            <strong>Risk Score:</strong>
-            {{ investigation.risk_score }}
-        </p>
-
-        <p>
-            <strong>Verdict:</strong>
-            {{ investigation.verdict }}
-        </p>
-
-    </div>
-
-    <div class="report-section">
-
-        <h2>Analyst Recommendation</h2>
-
-        {% if investigation.verdict == "Safe" %}
-
-            <p>
-                No immediate threat indicators detected.
-            </p>
-
-        {% elif investigation.verdict == "Suspicious" %}
-
-            <p>
-                Proceed with caution and verify legitimacy.
-            </p>
-
-        {% elif investigation.verdict == "High Risk" %}
-
-            <p>
-                Investigation recommended before interaction.
-            </p>
-
-        {% else %}
-
-            <p>
-                Potential phishing or malicious indicator.
-                Avoid interaction and investigate immediately.
-            </p>
-
-        {% endif %}
-
-    </div>
-
-</div>
-
+<article class="panel report-panel"><p class="eyebrow">THREAT INTELLIGENCE</p><h2>Provider results</h2>
+    {% if investigation.enrichment %}<div class="provider-grid">{% for provider in investigation.enrichment %}<section class="provider-card"><div class="provider-heading"><h3>{{ provider.provider }}</h3><span class="status-tag status-{{ provider.status|replace('_', '-') }}">{{ provider.status|replace('_', ' ')|title }}</span></div><p>{{ provider.summary }}</p><small>Checked {{ provider.checked_at }}</small>{% if provider.findings %}<ul class="compact-list">{% for item in provider.findings %}<li><strong>{{ item.name }}:</strong> {{ item.detail }}</li>{% endfor %}</ul>{% endif %}{% if provider.limitations %}<ul class="limitations">{% for item in provider.limitations %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}</section>{% endfor %}</div>{% else %}<p class="empty-inline">No external enrichment was stored.</p>{% endif %}
+</article>
 {% endblock %}

@@ -1,30 +1,24 @@
 {% extends "base.html" %}
 
+{% block title %}Investigate · Trinetra AI{% endblock %}
+
 {% block content %}
-
-<div class="investigation-container">
-
-    <h1>Investigate Target</h1>
-
-    <p>
-        Analyze domains, IP addresses, and URLs.
-    </p>
-
-    <form method="POST" class="investigation-form">
-
-        <input
-            type="text"
-            name="query"
-            placeholder="Enter domain, IP, or URL"
-            required
-        >
-
-        <button type="submit">
-            Analyze
-        </button>
-
+<section class="form-card">
+    <p class="eyebrow">INDICATOR ANALYSIS</p>
+    <h1>Investigate an indicator</h1>
+    <p class="muted intro-copy">Review domain, IP address, or URL syntax and collect explainable signals. This workflow does not probe the target.</p>
+    {% if error %}<div class="alert error-alert" role="alert">{{ error }}</div>{% endif %}
+    <form method="post" class="stack-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="query">Domain, IP address, or URL</label>
+        <input id="query" type="text" name="query" value="{{ query or '' }}" placeholder="example.org or https://example.org/path" maxlength="2048" autocomplete="off" autocapitalize="off" spellcheck="false" required>
+        <p class="field-help">Inputs are normalized before storage. URLs are parsed locally and never opened.</p>
+        <label class="checkbox-row">
+            <input type="checkbox" name="enrich" value="on" {% if enrich_requested %}checked{% endif %}>
+            <span><strong>Request optional reputation enrichment</strong><small>Queries configured VirusTotal and AbuseIPDB providers. The indicator is shared with those providers only when you select this option.</small></span>
+        </label>
+        <div class="form-actions"><button class="button primary" type="submit">Run investigation</button><a class="button secondary" href="{{ url_for('dashboard.dashboard') }}">Cancel</a></div>
     </form>
-
-</div>
-
+    <div class="scope-note"><strong>Analysis scope</strong><p>Static syntax and metadata findings are separated from heuristics. An unassessed result does not mean an indicator is safe.</p></div>
+</section>
 {% endblock %}

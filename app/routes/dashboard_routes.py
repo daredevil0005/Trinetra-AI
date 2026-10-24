@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template
+from sqlalchemy import or_
 
-from app.database.models.investigation import Investigation
+from app.database.models import Investigation
 
 dashboard_bp = Blueprint(
     "dashboard",
@@ -10,35 +11,27 @@ dashboard_bp = Blueprint(
 
 @dashboard_bp.route("/")
 def dashboard():
-
+    count = Investigation.query.count()
+    counts = {
+        verdict: Investigation.query.filter_by(verdict=verdict).count()
+        for verdict in ("Safe", "Suspicious", "High Risk", "Critical")
+    }
+    unassessed_count = Investigation.query.filter(
+        or_(
+            Investigation.verdict.in_(("Unassessed", "Low")),
+            Investigation.verdict.is_(None),
+        )
+    ).count()
     investigations = Investigation.query.order_by(
-        Investigation.created_at.desc()
-    ).all()
-
-    total_investigations = len(investigations)
-
-    safe_count = Investigation.query.filter_by(
-        verdict="Safe"
-    ).count()
-
-    suspicious_count = Investigation.query.filter_by(
-        verdict="Suspicious"
-    ).count()
-
-    high_risk_count = Investigation.query.filter_by(
-        verdict="High Risk"
-    ).count()
-
-    critical_count = Investigation.query.filter_by(
-        verdict="Critical"
-    ).count()
-
+        Investigation.created_at.desc(), Investigation.id.desc()
+    ).limit(10).all()
     return render_template(
         "dashboard/dashboard.html",
         investigations=investigations,
-        total_investigations=total_investigations,
-        safe_count=safe_count,
-        suspicious_count=suspicious_count,
-        high_risk_count=high_risk_count,
-        critical_count=critical_count
+        total_investigations=count,
+        safe_count=counts["Safe"],
+        suspicious_count=counts["Suspicious"],
+        high_risk_count=counts["High Risk"],
+        critical_count=counts["Critical"],
+        unassessed_count=unassessed_count,
     )

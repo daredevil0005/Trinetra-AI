@@ -1,33 +1,28 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-    <title>Trinetra AI</title>
-
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <title>{% block title %}Trinetra AI{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script defer src="{{ url_for('static', filename='js/app.js') }}"></script>
 </head>
-
 <body>
-
-    <nav>
-
-         <h2>🔱 Trinetra AI</h2>
-
-         <ul>
-            <li><a href="/">Dashboard</a></li>
-            <li><a href="/investigate">Investigate</a></li>
-            <li><a href="#">Logs</a></li>
-            <li><a href="/ioc">IOC Extractor</a></li>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <nav class="topbar" aria-label="Main navigation">
+        <a class="brand" href="{{ url_for('dashboard.dashboard') }}"><span class="brand-mark">🔱</span><span>Trinetra <b>AI</b></span></a>
+        <ul class="nav-links">
+            <li><a href="{{ url_for('dashboard.dashboard') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('investigation.investigate') }}">Investigate</a></li>
+            <li><a href="{{ url_for('history.history') }}">History</a></li>
+            <li><a href="{{ url_for('ioc.ioc_extractor') }}">IOC Extractor</a></li>
+            <li><a href="{{ url_for('logs.logs') }}">Logs</a></li>
         </ul>
-
     </nav>
-    <div class="container">
-
-        {% block content %}
-        {% endblock %}
-
-    </div>
-
+    <main class="container" id="main-content">
+        {% block content %}{% endblock %}
+    </main>
+    <footer class="site-footer">Trinetra AI <span>·</span> Deterministic analysis with clear evidence boundaries</footer>
 </body>
-
 </html>

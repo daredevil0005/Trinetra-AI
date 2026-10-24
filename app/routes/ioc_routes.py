@@ -16,22 +16,15 @@ ioc_bp = Blueprint(
     methods=["GET", "POST"]
 )
 def ioc_extractor():
-
     if request.method == "POST":
-
-        threat_text = request.form.get(
-            "threat_text"
-        )
-
-        results = extract_iocs(
-            threat_text
-        )
-
-        return render_template(
-            "ioc/result.html",
-            results=results,
-            threat_text=threat_text
-        )
+        threat_text = request.form.get("threat_text", "")
+        if not threat_text.strip():
+            return render_template("ioc/extractor.html", error="Paste text to extract indicators from."), 400
+        if len(threat_text) > 100_000:
+            return render_template("ioc/extractor.html", error="Text must be 100,000 characters or fewer."), 413
+        results = extract_iocs(threat_text)
+        total = sum(len(values) for values in results.values())
+        return render_template("ioc/result.html", results=results, total=total)
 
     return render_template(
         "ioc/extractor.html"

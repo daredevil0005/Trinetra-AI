@@ -1,72 +1,40 @@
 {% extends "base.html" %}
 
+{% block title %}Investigation report · Trinetra AI{% endblock %}
+
 {% block content %}
+<section class="page-heading split-heading">
+    <div><p class="eyebrow">INVESTIGATION COMPLETE</p><h1>Investigation report</h1><p class="muted">Created {{ investigation.created_at.strftime('%Y-%m-%d %H:%M UTC') if investigation.created_at else 'just now' }}</p></div>
+    <a class="button secondary" href="{{ url_for('history.history') }}">All investigations</a>
+</section>
 
+<section class="report-grid">
+    <article class="panel overview-panel">
+        <div class="section-heading"><div><p class="eyebrow">OVERVIEW</p><h2>Indicator</h2></div><span class="type-tag">{{ investigation.query_type|upper }}</span></div>
+        <dl class="detail-list"><div><dt>Target</dt><dd class="break-all">{{ investigation.target }}</dd></div><div><dt>Status</dt><dd>{{ investigation.analysis_status|title }}</dd></div><div><dt>Normalized analysis</dt><dd>{{ analysis.message }}</dd></div></dl>
+    </article>
+    <article class="panel risk-panel">
+        <p class="eyebrow">REVIEW PRIORITY</p><div class="risk-score-row"><strong>{{ risk_result.score }}</strong><span class="risk-out-of">/ 100</span><span class="badge verdict-{{ risk_result.verdict|lower|replace(' ', '-') }}">{{ risk_result.verdict }}</span></div>
+        <progress class="score-progress" max="100" value="{{ risk_result.score }}" aria-label="Review priority score {{ risk_result.score }} out of 100"></progress>
+        <p>{{ risk_result.explanation }}</p><p class="field-help">The score is a review priority based on listed heuristics and provider findings; it is not a probability or proof of maliciousness.</p>
+    </article>
+</section>
 
-<div class="report-container">
+<article class="panel report-panel"><div class="section-heading"><div><p class="eyebrow">ANALYSIS</p><h2>Summary and evidence</h2></div></div><p class="summary-copy">{{ analysis.summary }}</p>
+    {% if analysis.observations %}<h3>Observed facts</h3><ul class="evidence-list">{% for item in analysis.observations %}<li><strong>{{ item.name }}</strong><span>{{ item.detail }}</span></li>{% endfor %}</ul>{% endif %}
+    {% if analysis.heuristics %}<h3>Heuristic indicators</h3><ul class="evidence-list">{% for item in analysis.heuristics %}<li><strong>{{ item.name }} <span class="weight-tag">+{{ item.weight }}</span></strong><span>{{ item.detail }}</span></li>{% endfor %}</ul>{% else %}<p class="empty-inline">No local heuristic indicators were observed.</p>{% endif %}
+</article>
 
-    <h1>🔱 Investigation Report</h1>
+<article class="panel report-panel"><div class="section-heading"><div><p class="eyebrow">OPTIONAL ENRICHMENT</p><h2>Threat intelligence sources</h2></div></div>
+    {% if analysis.enrichment %}
+        <div class="provider-grid">{% for provider in analysis.enrichment %}<section class="provider-card"><div class="provider-heading"><h3>{{ provider.provider }}</h3><span class="status-tag status-{{ provider.status|replace('_', '-') }}">{{ provider.status|replace('_', ' ')|title }}</span></div><p>{{ provider.summary }}</p><small>Checked {{ provider.checked_at }}</small>{% if provider.findings %}<ul class="compact-list">{% for item in provider.findings %}<li><strong>{{ item.name }}:</strong> {{ item.detail }}</li>{% endfor %}</ul>{% endif %}{% if provider.limitations %}<ul class="limitations">{% for item in provider.limitations %}<li>{{ item }}</li>{% endfor %}</ul>{% endif %}</section>{% endfor %}</div>
+    {% else %}<p class="empty-inline">No external provider was queried. Select optional enrichment on an investigation to request it.</p>{% endif %}
+</article>
 
-    <div class="report-section">
+<section class="report-grid">
+    <article class="panel report-panel"><p class="eyebrow">NEXT STEPS</p><h2>Recommendations</h2><ul class="recommendation-list">{% for item in analysis.recommendations %}<li>{{ item }}</li>{% endfor %}</ul></article>
+    <article class="panel report-panel"><p class="eyebrow">SCOPE</p><h2>Sources and limitations</h2><ul class="recommendation-list">{% for item in analysis.data_sources %}<li>{{ item }}</li>{% endfor %}</ul></article>
+</section>
 
-        <h2>Overview</h2>
-
-        <p><strong>Target:</strong> {{ query }}</p>
-
-        <p><strong>Type:</strong> {{ query_type }}</p>
-
-        <p><strong>Status:</strong> {{ analysis.message }}</p>
-
-    </div>
-
-    <div class="report-section">
-
-        <h2>Risk Assessment</h2>
-
-        <p><strong>Risk Score:</strong> {{ risk_result.score }}</p>
-
-        <p><strong>Verdict:</strong> {{ risk_result.verdict }}</p>
-
-    </div>
-
-    <div class="report-section">
-
-        <h2>Evidence</h2>
-
-        <ul>
-
-            {% for item in risk_result.evidence %}
-                <li>{{ item }}</li>
-            {% endfor %}
-
-        </ul>
-
-    </div>
-
-    <div class="report-section">
-
-        <h2>Recommendation</h2>
-
-        {% if risk_result.verdict == "Safe" %}
-
-            <p>No immediate threat indicators detected.</p>
-
-        {% elif risk_result.verdict == "Suspicious" %}
-
-            <p>Proceed with caution and verify legitimacy.</p>
-
-        {% elif risk_result.verdict == "High Risk" %}
-
-            <p>Investigation recommended before interaction.</p>
-
-        {% else %}
-
-            <p>Potential phishing or malicious indicator. Avoid interaction and investigate immediately.</p>
-
-        {% endif %}
-
-    </div>
-
-</div>
-
+<div class="report-actions"><a class="button primary" href="{{ url_for('investigation.view_report', investigation_id=investigation.id) }}">Open saved report</a><a class="button secondary" href="{{ url_for('investigation.download_report', investigation_id=investigation.id) }}">Download text report</a></div>
 {% endblock %}
