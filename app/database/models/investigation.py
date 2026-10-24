@@ -5,8 +5,18 @@ import json
 class Investigation(db.Model):
 
     __tablename__ = "investigations"
+    __table_args__ = (
+        db.UniqueConstraint("id", "owner_user_id", name="uq_investigation_id_owner"),
+        db.Index("ix_investigations_owner_created", "owner_user_id", "created_at"),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
+
+    owner_user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
 
     target = db.Column(db.String(2048), nullable=False)
 
@@ -38,7 +48,8 @@ class Investigation(db.Model):
         server_default=db.func.now()
     )
 
-    activity = db.relationship("ActivityLog", back_populates="investigation")
+    owner = db.relationship("User", back_populates="investigations")
+    activity = db.relationship("ActivityLog", back_populates="investigation", viewonly=True)
 
     @staticmethod
     def _load_list(value):
@@ -67,4 +78,4 @@ class Investigation(db.Model):
         return self._load_list(self.data_sources_json)
 
     def __repr__(self):
-        return f"<Investigation {self.target}>"
+        return f"<Investigation {self.id}>"

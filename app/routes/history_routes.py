@@ -1,14 +1,16 @@
 from flask import Blueprint, render_template, request
 
 from app.database.models import Investigation
+from app.security.auth import current_user, login_required
 
 
 history_bp = Blueprint("history", __name__)
 
 
 @history_bp.get("/history")
+@login_required
 def history():
-    query = Investigation.query
+    query = Investigation.query.filter_by(owner_user_id=current_user().id)
     search = request.args.get("q", "").strip()[:120]
     indicator_type = request.args.get("type", "").strip().lower()
     verdict = request.args.get("verdict", "").strip()

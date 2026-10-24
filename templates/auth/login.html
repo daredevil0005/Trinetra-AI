@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Sign in · Trinetra AI{% endblock %}
+
+{% block content %}
+<section class="form-card auth-card">
+    <p class="eyebrow">SECURE ACCESS</p>
+    <h1>Sign in to Trinetra AI</h1>
+    <p class="muted intro-copy">Use the account provided by your administrator.</p>
+    {% if error %}<div class="alert error-alert" role="alert">{{ error }}</div>{% endif %}
+    <form method="post" action="{{ url_for('auth.login') }}{% if next_url %}?next={{ next_url|urlencode }}{% endif %}" class="stack-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" minlength="3" maxlength="32" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" maxlength="128" autocomplete="current-password" required>
+        <div class="form-actions"><button class="button primary" type="submit">Sign in</button></div>
+    </form>
+</section>
+{% endblock %}

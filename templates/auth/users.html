@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}User management · Trinetra AI{% endblock %}
+
+{% block content %}
+<section class="page-heading"><p class="eyebrow">ADMINISTRATION</p><h1>User management</h1><p class="muted">Manage sign-in accounts and review account-management events. Administrator role does not grant access to another user's investigations.</p></section>
+{% if error %}<div class="alert {{ 'success-alert' if temporary_password else 'error-alert' }}" role="status">{{ error }}</div>{% endif %}
+{% if temporary_password %}<section class="panel temporary-credential" aria-label="One-time temporary password"><h2>Copy this temporary password now</h2><p>It is shown only in this response. Deliver it to the user through a separate secure channel. The user must change it at first sign-in.</p><code>{{ temporary_password }}</code></section>{% endif %}
+
+<section class="panel">
+    <div class="section-heading"><div><p class="eyebrow">NEW ACCOUNT</p><h2>Create a user</h2></div></div>
+    <form method="post" action="{{ url_for('users.create_user') }}" class="filter-form user-create-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label><span>Username</span><input name="username" type="text" minlength="3" maxlength="32" pattern="[A-Za-z0-9][A-Za-z0-9_.-]{1,30}[A-Za-z0-9]" required></label>
+        <label><span>Role</span><select name="role"><option value="user">Standard user</option><option value="admin">Administrator</option></select></label>
+        <div class="filter-actions"><button class="button primary" type="submit">Create account</button></div>
+    </form>
+</section>
+
+<section class="panel">
+    <div class="section-heading"><div><p class="eyebrow">ACCOUNTS</p><h2>Managed users</h2></div></div>
+    <div class="table-wrap"><table><thead><tr><th>Username</th><th>Role</th><th>Status</th><th>Legacy records</th><th>Actions</th></tr></thead><tbody>
+        {% for user in users %}<tr>
+            <td>{{ user.username }}{% if user.id == current_user.id %} <span class="muted">(you)</span>{% endif %}</td>
+            <td>{{ 'Administrator' if user.role == 'admin' else 'Standard user' }}</td>
+            <td>{{ 'Active' if user.is_active else 'Inactive' }}{% if user.must_change_password %} · password change required{% endif %}</td>
+            <td>{{ 'Designated legacy owner' if user.is_legacy_owner else '—' }}</td>
+            <td class="user-actions">
+                {% if user.id != current_user.id %}
+                <form method="post" action="{{ url_for('users.toggle_user', user_id=user.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="text-button" type="submit">{{ 'Deactivate' if user.is_active else 'Reactivate' }}</button></form>
+                <form method="post" action="{{ url_for('users.reset_password', user_id=user.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="text-button" type="submit">Issue temporary password</button></form>
+                {% else %}<span class="muted">Manage password from your account page</span>{% endif %}
+            </td>
+        </tr>{% endfor %}
+    </tbody></table></div>
+</section>
+
+<section class="panel">
+    <div class="section-heading"><div><p class="eyebrow">ADMIN AUDIT</p><h2>Account-management events</h2></div></div>
+    {% if audits %}<div class="table-wrap"><table><thead><tr><th>Time</th><th>Event</th><th>Administrator</th><th>Account</th><th>Details</th></tr></thead><tbody>
+        {% for item in audits %}<tr><td class="muted">{{ item.created_at.strftime('%Y-%m-%d %H:%M UTC') if item.created_at else '—' }}</td><td>{{ item.event_type|replace('.', ' ')|title }}</td><td>{{ item.actor.username }}</td><td>{{ item.subject.username if item.subject else '—' }}</td><td>{{ item.message }}</td></tr>{% endfor %}
+    </tbody></table></div>{% else %}<p class="empty-inline">No account-management events have been recorded.</p>{% endif %}
+</section>
+{% endblock %}

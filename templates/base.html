@@ -13,14 +13,24 @@
     <nav class="topbar" aria-label="Main navigation">
         <a class="brand" href="{{ url_for('dashboard.dashboard') }}"><span class="brand-mark">🔱</span><span>Trinetra <b>AI</b></span></a>
         <ul class="nav-links">
-            <li><a href="{{ url_for('dashboard.dashboard') }}">Dashboard</a></li>
-            <li><a href="{{ url_for('investigation.investigate') }}">Investigate</a></li>
-            <li><a href="{{ url_for('history.history') }}">History</a></li>
-            <li><a href="{{ url_for('ioc.ioc_extractor') }}">IOC Extractor</a></li>
-            <li><a href="{{ url_for('logs.logs') }}">Logs</a></li>
+            {% if current_user %}
+                <li><a href="{{ url_for('dashboard.dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('investigation.investigate') }}">Investigate</a></li>
+                <li><a href="{{ url_for('history.history') }}">History</a></li>
+                <li><a href="{{ url_for('ioc.ioc_extractor') }}">IOC Extractor</a></li>
+                <li><a href="{{ url_for('logs.logs') }}">My activity</a></li>
+                {% if current_user.is_admin %}<li><a href="{{ url_for('users.list_users') }}">Users</a></li>{% endif %}
+                <li><a href="{{ url_for('auth.change_password') }}">{{ current_user.username }}</a></li>
+                <li><form method="post" action="{{ url_for('auth.logout') }}" class="nav-logout"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Sign out</button></form></li>
+            {% else %}
+                <li><a href="{{ url_for('auth.login') }}">Sign in</a></li>
+            {% endif %}
         </ul>
     </nav>
     <main class="container" id="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}<div class="alert {{ 'success-alert' if category == 'success' else 'error-alert' }}" role="status">{{ message }}</div>{% endfor %}
+        {% endwith %}
         {% block content %}{% endblock %}
     </main>
     <footer class="site-footer">Trinetra AI <span>·</span> Deterministic analysis with clear evidence boundaries</footer>

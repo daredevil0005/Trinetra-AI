@@ -2,6 +2,7 @@ from flask import Blueprint, render_template
 from sqlalchemy import or_
 
 from app.database.models import Investigation
+from app.security.auth import current_user, login_required
 
 dashboard_bp = Blueprint(
     "dashboard",
@@ -10,19 +11,22 @@ dashboard_bp = Blueprint(
 
 
 @dashboard_bp.route("/")
+@login_required
 def dashboard():
-    count = Investigation.query.count()
+    owner_id = current_user().id
+    query = Investigation.query.filter_by(owner_user_id=owner_id)
+    count = query.count()
     counts = {
-        verdict: Investigation.query.filter_by(verdict=verdict).count()
+        verdict: query.filter_by(verdict=verdict).count()
         for verdict in ("Safe", "Suspicious", "High Risk", "Critical")
     }
-    unassessed_count = Investigation.query.filter(
+    unassessed_count = query.filter(
         or_(
             Investigation.verdict.in_(("Unassessed", "Low")),
             Investigation.verdict.is_(None),
         )
     ).count()
-    investigations = Investigation.query.order_by(
+    investigations = query.order_by(
         Investigation.created_at.desc(), Investigation.id.desc()
     ).limit(10).all()
     return render_template(

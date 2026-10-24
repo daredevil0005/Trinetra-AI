@@ -5,33 +5,54 @@ from unittest.mock import patch
 
 from app import create_app
 from app.database.db import db
-from app.database.models import ActivityLog, Investigation
+from app.database.migrations import upgrade_database
+from app.database.models import ActivityLog, Investigation, User
+from app.security.auth import hash_password
 
 
 class RouteTests(unittest.TestCase):
     def setUp(self):
         self.app = create_app({
             "TESTING": True,
-            "SECRET_KEY": "test-only-secret",
+            "SECRET_KEY": "test-only-secret-for-trinetra-tests",
             "SQLALCHEMY_DATABASE_URI": "sqlite://",
+            "SESSION_COOKIE_SECURE": False,
+            "TRINETRA_ENV": "testing",
         })
+        with self.app.app_context():
+            upgrade_database()
+            self.user = User(username="analyst", password_hash=hash_password("correct horse battery staple"), role="user")
+            db.session.add(self.user)
+            db.session.commit()
+            self.user_id = self.user.id
         self.client = self.app.test_client()
+        self.login()
 
     def tearDown(self):
         with self.app.app_context():
             db.session.remove()
             db.engine.dispose()
 
-    def token(self, path="/investigate"):
+    def token(self, path="/login"):
         response = self.client.get(path)
         self.assertEqual(response.status_code, 200)
         match = re.search(rb'name="csrf_token" value="([^"]+)"', response.data)
         self.assertIsNotNone(match)
         return match.group(1).decode("ascii")
 
+    def login(self):
+        token = self.token("/login")
+        response = self.client.post("/login", data={
+            "csrf_token": token,
+            "username": "analyst",
+            "password": "correct horse battery staple",
+        })
+        self.assertEqual(response.status_code, 302)
+        return response
+
     def post_investigation(self, query, **extra):
         return self.client.post("/investigate", data={
-            "csrf_token": self.token(),
+            "csrf_token": self.token("/investigate"),
             "query": query,
             **extra,
         })
@@ -62,11 +83,12 @@ class RouteTests(unittest.TestCase):
             record = Investigation.query.one()
             record_id = record.id
             self.assertEqual(record.target, "example.org")
+            self.assertEqual(record.owner_user_id, self.user_id)
             self.assertEqual(record.query_type, "domain")
             self.assertEqual(record.analysis_status, "completed")
             self.assertTrue(record.summary)
             self.assertTrue(record.data_sources)
-            self.assertEqual(ActivityLog.query.count(), 1)
+            self.assertEqual(ActivityLog.query.filter_by(user_id=self.user_id).count(), 2)
         saved = self.client.get(f"/report/{record_id}")
         self.assertEqual(saved.status_code, 200)
         self.assertIn(b"Data sources and limitations", saved.data)
@@ -75,6 +97,27 @@ class RouteTests(unittest.TestCase):
         self.assertIn("attachment;", download.headers["Content-Disposition"])
         self.assertIn(b"Trinetra AI Investigation Report", download.data)
         self.assertIn(b"no DNS query", download.data)
+        self.assertIn("no-store", download.headers["Cache-Control"])
+
+    def test_saved_report_escapes_html_and_download_is_plain_text(self):
+        with self.app.app_context():
+            record = Investigation(
+                owner_user_id=self.user_id,
+                target="<script>alert('x')</script>",
+                query_type="domain",
+                risk_score=0,
+                verdict="Unassessed",
+            )
+            db.session.add(record)
+            db.session.commit()
+            record_id = record.id
+        report = self.client.get(f"/report/{record_id}")
+        self.assertEqual(report.status_code, 200)
+        self.assertNotIn(b"<script>alert('x')</script>", report.data)
+        self.assertIn(b"&lt;script&gt;", report.data)
+        download = self.client.get(f"/report/{record_id}/download")
+        self.assertEqual(download.mimetype, "text/plain")
+        self.assertIn(b"<script>alert('x')</script>", download.data)
 
     def test_invalid_input_is_not_saved_and_logs_generic_error(self):
         response = self.post_investigation("999.999.999.999")
@@ -82,8 +125,7 @@ class RouteTests(unittest.TestCase):
         self.assertIn(b"non-numeric", response.data.lower())
         with self.app.app_context():
             self.assertEqual(Investigation.query.count(), 0)
-            event = ActivityLog.query.one()
-            self.assertEqual(event.event_type, "investigation.validation_failed")
+            event = ActivityLog.query.filter_by(event_type="investigation.validation_failed").one()
             self.assertNotIn("999", event.message)
         self.assertIn(b"No target stored", self.client.get("/logs").data)
 
@@ -123,6 +165,12 @@ class RouteTests(unittest.TestCase):
         self.assertEqual(result.status_code, 200)
         get.assert_not_called()
         self.assertIn(b"not configured", result.data.lower())
+
+    def test_security_headers(self):
+        response = self.client.get("/login")
+        self.assertEqual(response.headers["X-Content-Type-Options"], "nosniff")
+        self.assertIn("frame-ancestors 'none'", response.headers["Content-Security-Policy"])
+        self.assertIn("no-store", response.headers["Cache-Control"])
 
 
 if __name__ == "__main__":

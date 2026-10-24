@@ -17,5 +17,6 @@ instance/*.sqlite
 instance/*.sqlite-*
 instance/*.sqlite3
 instance/*.sqlite3-*
+instance/backups/
 uploads/*
 generated_reports/*

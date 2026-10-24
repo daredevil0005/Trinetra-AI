@@ -3,6 +3,7 @@ from flask import render_template
 from flask import request
 
 from app.ioc.extractor import extract_iocs
+from app.security.auth import login_required
 
 
 ioc_bp = Blueprint(
@@ -15,6 +16,7 @@ ioc_bp = Blueprint(
     "/ioc",
     methods=["GET", "POST"]
 )
+@login_required
 def ioc_extractor():
     if request.method == "POST":
         threat_text = request.form.get("threat_text", "")

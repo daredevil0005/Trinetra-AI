@@ -1,23 +1,21 @@
 import json
-import logging
 
-from flask import Blueprint, make_response, render_template, request
+from flask import Blueprint, current_app, make_response, render_template, request
 
 from app.database.db import db
 from app.database.models import ActivityLog, Investigation
 from app.intelligence.agent import run_investigation
 from app.intelligence.type_detector import detect_type
+from app.security.auth import current_user, login_required
 
 
 investigation_bp = Blueprint(
     "investigation",
     __name__
 )
-logger = logging.getLogger(__name__)
-
-
-def _log_activity(event_type, message, investigation_id=None):
+def _log_activity(user_id, event_type, message, investigation_id=None):
     db.session.add(ActivityLog(
+        user_id=user_id,
         event_type=event_type,
         message=message,
         investigation_id=investigation_id,
@@ -28,6 +26,7 @@ def _log_activity(event_type, message, investigation_id=None):
     "/investigate",
     methods=["GET", "POST"]
 )
+@login_required
 def investigate():
     if request.method == "POST":
         query = request.form.get("query", "").strip()
@@ -44,9 +43,9 @@ def investigate():
                 analysis = run_investigation(query, query_type, request_enrichment=enrich_requested)
             except Exception:
                 db.session.rollback()
-                logger.exception("Indicator analysis failed")
+                current_app.logger.error("indicator_analysis_failed")
                 try:
-                    _log_activity("investigation.failed", "An investigation could not be completed.")
+                    _log_activity(current_user().id, "investigation.failed", "An investigation could not be completed.")
                     db.session.commit()
                 except Exception:
                     db.session.rollback()
@@ -59,7 +58,7 @@ def investigate():
                 error = analysis["message"]
 
         if error:
-            _log_activity("investigation.validation_failed", "An investigation input failed validation.")
+            _log_activity(current_user().id, "investigation.validation_failed", "An investigation input failed validation.")
             db.session.commit()
             return render_template(
                 "investigation/investigate.html",
@@ -82,6 +81,7 @@ def investigate():
                 if item.get("source") != "local_heuristic"
             ]
             record = Investigation(
+                owner_user_id=current_user().id,
                 target=analysis["normalized"],
                 query_type=query_type,
                 risk_score=risk_result["score"],
@@ -95,13 +95,13 @@ def investigate():
             )
             db.session.add(record)
             db.session.flush()
-            _log_activity("investigation.completed", "An investigation completed.", record.id)
+            _log_activity(current_user().id, "investigation.completed", "An investigation completed.", record.id)
             db.session.commit()
         except Exception:
             db.session.rollback()
-            logger.exception("Investigation processing failed")
+            current_app.logger.error("investigation_processing_failed")
             try:
-                _log_activity("investigation.failed", "An investigation could not be saved.")
+                _log_activity(current_user().id, "investigation.failed", "An investigation could not be saved.")
                 db.session.commit()
             except Exception:
                 db.session.rollback()
@@ -127,14 +127,22 @@ def investigate():
 @investigation_bp.route(
     "/report/<int:investigation_id>"
 )
+@login_required
 def view_report(investigation_id):
-    investigation = db.get_or_404(Investigation, investigation_id)
+    investigation = Investigation.query.filter_by(
+        id=investigation_id,
+        owner_user_id=current_user().id,
+    ).first_or_404()
     return render_template("investigation/view_report.html", investigation=investigation)
 
 
 @investigation_bp.get("/report/<int:investigation_id>/download")
+@login_required
 def download_report(investigation_id):
-    investigation = db.get_or_404(Investigation, investigation_id)
+    investigation = Investigation.query.filter_by(
+        id=investigation_id,
+        owner_user_id=current_user().id,
+    ).first_or_404()
     lines = [
         "Trinetra AI Investigation Report",
         f"Target: {investigation.target}",
