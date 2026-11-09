@@ -37,7 +37,9 @@ Before migrating an existing database, stop the app and follow this sequence fro
 
 ```powershell
 # Capture the untouched database before provisioning changes its schema.
-.\venv\Scripts\flask.exe --app run.py db-backup --output instance\backups\before-auth.sqlite
+$preAuthStamp = [DateTimeOffset]::UtcNow.ToString("yyyyMMddTHHmmssZ")
+$preAuthBackup = Join-Path "instance\backups" "pre-auth-$preAuthStamp.sqlite"
+.\venv\Scripts\flask.exe --app run.py db-backup --output $preAuthBackup
 
 # Create the first administrator; enter a strong password at the hidden prompt.
 .\venv\Scripts\flask.exe --app run.py provision-admin admin
@@ -46,8 +48,12 @@ Before migrating an existing database, stop the app and follow this sequence fro
 .\venv\Scripts\flask.exe --app run.py provision-legacy-owner legacy-analyst
 
 # Back up the provisioned state, then verify it immediately before migration.
-.\venv\Scripts\flask.exe --app run.py db-backup --output instance\backups\before-ownership.sqlite
-.\venv\Scripts\flask.exe --app run.py db-upgrade --backup instance\backups\before-ownership.sqlite --legacy-owner legacy-analyst
+$ownershipStamp = [DateTimeOffset]::UtcNow.ToString("yyyyMMddTHHmmssZ")
+$ownershipBackup = Join-Path "instance\backups" "pre-ownership-$ownershipStamp.sqlite"
+.\venv\Scripts\flask.exe --app run.py db-backup --output $ownershipBackup
+
+# Run only after the operator explicitly approves the real database migration.
+.\venv\Scripts\flask.exe --app run.py db-upgrade --backup $ownershipBackup --legacy-owner legacy-analyst
 ```
 
 The commands refuse to overwrite backup or restore files. Backup checks include SQLite integrity, schema, row counts, and a private logical-data digest. Keep backups in access-controlled storage and retain them according to your organization's data-retention policy. The pre-authentication backup is an emergency recovery point; it does not include the newly provisioned user accounts. The second backup is the migration rollback point.
@@ -55,10 +61,12 @@ The commands refuse to overwrite backup or restore files. Backup checks include 
 To validate recovery, restore to a **new, separate path**, then inspect that copy without replacing the active database:
 
 ```powershell
-.\venv\Scripts\flask.exe --app run.py db-restore-copy --backup instance\backups\before-ownership.sqlite --destination instance\backups\restore-check.sqlite
+$restoreStamp = [DateTimeOffset]::UtcNow.ToString("yyyyMMddTHHmmssZ")
+$restoreCopy = Join-Path "instance\backups" "restore-check-$restoreStamp.sqlite"
+.\venv\Scripts\flask.exe --app run.py db-restore-copy --backup $ownershipBackup --destination $restoreCopy
 ```
 
-A restore copy is never automatically made active. If migration fails, leave the source database in place, preserve both backups, inspect the safe error, and restore to another new path for investigation. Do not delete or replace the working database as a recovery shortcut. The migration currently supports SQLite only; it stops if the legacy schema differs from the expected version, custom indexes/triggers exist, or orphaned activity rows are detected.
+A restore copy is never automatically made active. If migration fails, leave the source database in place, preserve both backups, inspect the safe error, and restore to another new path for investigation. Do not delete or replace the working database as a recovery shortcut. The migration currently supports SQLite only; it stops if the legacy schema differs from the expected version, custom indexes/triggers exist, orphaned activity rows are detected, or tables exist without the expected investigations table.
 
 For a new empty database, provision the administrator first, then make a backup and run `db-upgrade` without `--legacy-owner`. The same explicit upgrade establishes schema version 2.
 

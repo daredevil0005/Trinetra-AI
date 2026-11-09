@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 
 from app import create_app
 from app.database.db import db
@@ -99,6 +99,109 @@ class OwnershipMigrationTests(unittest.TestCase):
             activity = ActivityLog.query.one()
             self.assertEqual(activity.user_id, self.owner_id)
             self.assertEqual(activity.investigation.owner_user_id, self.owner_id)
+            self.assertEqual(db.session.execute(text("PRAGMA foreign_key_check")).all(), [])
+
+    def test_already_migrated_database_is_idempotent(self):
+        with self.app.app_context():
+            first = upgrade_database("legacy-owner")
+            self.assertEqual(first["version"], 2)
+            second = upgrade_database()
+            self.assertEqual(second["version"], 2)
+            self.assertTrue(second["already_current"])
+            self.assertEqual(
+                db.session.execute(text("SELECT COUNT(*) FROM investigations")).scalar_one(),
+                15,
+            )
+
+    def test_fresh_database_is_created_and_marked_current(self):
+        fresh_path = self.root / "fresh.sqlite"
+        fresh_app = create_app({
+            "TESTING": True,
+            "SECRET_KEY": "test-only-secret-for-fresh-migration",
+            "SQLALCHEMY_DATABASE_URI": f"sqlite:///{fresh_path.as_posix()}",
+            "SESSION_COOKIE_SECURE": False,
+            "TRINETRA_ENV": "testing",
+        })
+        try:
+            with fresh_app.app_context():
+                result = upgrade_database()
+                self.assertEqual(result["version"], 2)
+                self.assertEqual(result["investigations"], 0)
+                self.assertTrue(upgrade_database()["already_current"])
+                self.assertEqual(schema_version(), 2)
+                self.assertEqual(db.session.execute(text("PRAGMA foreign_key_check")).all(), [])
+        finally:
+            with fresh_app.app_context():
+                db.session.remove()
+                db.engine.dispose()
+
+    def test_partial_schema_is_rejected_without_marking_it_current(self):
+        partial_path = self.root / "partial.sqlite"
+        connection = sqlite3.connect(partial_path)
+        connection.executescript("""
+            CREATE TABLE activity_logs (
+                id INTEGER PRIMARY KEY,
+                event_type VARCHAR(50) NOT NULL,
+                message VARCHAR(255) NOT NULL,
+                investigation_id INTEGER,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            INSERT INTO activity_logs (id, event_type, message, investigation_id)
+            VALUES (7, 'legacy.event', 'Synthetic partial-schema row.', NULL);
+        """)
+        connection.commit()
+        connection.close()
+
+        partial_app = create_app({
+            "TESTING": True,
+            "SECRET_KEY": "test-only-secret-for-partial-migration",
+            "SQLALCHEMY_DATABASE_URI": f"sqlite:///{partial_path.as_posix()}",
+            "SESSION_COOKIE_SECURE": False,
+            "TRINETRA_ENV": "testing",
+        })
+        try:
+            with partial_app.app_context():
+                with self.assertRaisesRegex(RuntimeError, "inconsistent or unsupported partial schema"):
+                    upgrade_database()
+                self.assertEqual(schema_version(), 1)
+                self.assertEqual(
+                    db.session.execute(text("SELECT COUNT(*) FROM activity_logs")).scalar_one(),
+                    1,
+                )
+                self.assertNotIn("investigations", inspect(db.engine).get_table_names())
+                self.assertEqual(
+                    db.session.execute(text("SELECT COUNT(*) FROM schema_migrations WHERE version=2")).scalar_one(),
+                    0,
+                )
+        finally:
+            with partial_app.app_context():
+                db.session.remove()
+                db.engine.dispose()
+
+    def test_mid_migration_failure_rolls_back_rebuild(self):
+        with self.app.app_context():
+            with db.engine.begin() as connection:
+                connection.exec_driver_sql("CREATE TABLE migration_sentinel (value INTEGER)")
+                connection.exec_driver_sql(
+                    "CREATE INDEX ix_investigations_owner_created ON migration_sentinel(value)"
+                )
+            with self.assertRaisesRegex(sqlite3.OperationalError, "already exists"):
+                upgrade_database("legacy-owner")
+
+            tables = set(inspect(db.engine).get_table_names())
+            self.assertIn("investigations", tables)
+            self.assertIn("activity_logs", tables)
+            self.assertNotIn("investigations_new", tables)
+            self.assertNotIn("activity_logs_new", tables)
+            self.assertEqual(schema_version(), 1)
+            self.assertEqual(
+                db.session.execute(text("SELECT COUNT(*) FROM investigations")).scalar_one(),
+                15,
+            )
+            self.assertEqual(
+                db.session.execute(text("SELECT COUNT(*) FROM activity_logs")).scalar_one(),
+                1,
+            )
             self.assertEqual(db.session.execute(text("PRAGMA foreign_key_check")).all(), [])
 
     def test_verified_backup_and_restore_copy_preserve_row_counts(self):

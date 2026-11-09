@@ -25,6 +25,9 @@ _LEGACY_INVESTIGATION_COLUMNS = {
 _LEGACY_ACTIVITY_COLUMNS = {
     "id", "event_type", "message", "investigation_id", "created_at",
 }
+_FOUNDATION_TABLES = {
+    "schema_migrations", "users", "login_throttles", "admin_audit_logs",
+}
 
 
 def _require_sqlite():
@@ -227,6 +230,12 @@ def upgrade_database(legacy_owner_username=None):
     _require_sqlite()
     table_names = set(inspect(db.engine).get_table_names())
     if "investigations" not in table_names:
+        unexpected_tables = table_names - _FOUNDATION_TABLES
+        if unexpected_tables:
+            raise RuntimeError(
+                "The database has tables but no investigations table; "
+                "this is an inconsistent or unsupported partial schema, so migration stopped safely."
+            )
         db.create_all()
         details = {"legacy_owner_user_id": None, "investigations": 0, "activity_logs": 0}
         with db.engine.begin() as connection:
